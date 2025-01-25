@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Address to Coordinates</title>
+  <title>Coordinates Converter</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -26,12 +26,11 @@
   </style>
 </head>
 <body>
-  <h1>Manual Coordinates Input</h1>
-  <p>Enter your latitude and longitude below:</p>
+  <h1>Coordinates Converter</h1>
+  <p>Enter your coordinates in DMS format (e.g., <code>7°55'37"S 34°51'16"W</code>):</p>
 
-  <input type="text" id="latitude" placeholder="Enter latitude (e.g., -7.9265467)">
-  <input type="text" id="longitude" placeholder="Enter longitude (e.g., -34.8531041)">
-  <button onclick="processCoordinates()">Process Coordinates</button>
+  <input type="text" id="dms-input" placeholder="Enter coordinates in DMS format">
+  <button onclick="processDMSInput()">Convert</button>
 
   <div id="results" class="output">
     <h3>Results:</h3>
@@ -43,43 +42,42 @@
   </div>
 
   <script>
-    function processCoordinates() {
-      const latInput = document.getElementById('latitude').value;
-      const lonInput = document.getElementById('longitude').value;
+    function processDMSInput() {
+      const input = document.getElementById('dms-input').value;
 
-      const latitude = parseFloat(latInput);
-      const longitude = parseFloat(lonInput);
+      const dmsPattern = /([0-9]+)°([0-9]+)'([0-9.]+)"([NS])\s+([0-9]+)°([0-9]+)'([0-9.]+)"([EW])/i;
+      const match = input.match(dmsPattern);
 
-      if (isNaN(latitude) || isNaN(longitude)) {
-        alert('Please enter valid numeric values for latitude and longitude!');
+      if (!match) {
+        alert('Please enter valid coordinates in DMS format!');
         return;
       }
+
+      const latDegrees = parseFloat(match[1]);
+      const latMinutes = parseFloat(match[2]);
+      const latSeconds = parseFloat(match[3]);
+      const latDirection = match[4].toUpperCase();
+
+      const lonDegrees = parseFloat(match[5]);
+      const lonMinutes = parseFloat(match[6]);
+      const lonSeconds = parseFloat(match[7]);
+      const lonDirection = match[8].toUpperCase();
+
+      // Convert DMS to Decimal
+      const latitude = (latDegrees + latMinutes / 60 + latSeconds / 3600) * (latDirection === 'S' ? -1 : 1);
+      const longitude = (lonDegrees + lonMinutes / 60 + lonSeconds / 3600) * (lonDirection === 'W' ? -1 : 1);
 
       // Display in decimal format
       document.getElementById('lat-decimal').innerText = latitude.toFixed(6);
       document.getElementById('lon-decimal').innerText = longitude.toFixed(6);
 
-      // Convert to DMS (Degrees, Minutes, Seconds)
-      document.getElementById('lat-dms').innerText = convertToDMS(latitude, true);
-      document.getElementById('lon-dms').innerText = convertToDMS(longitude, false);
+      // Display in DMS format
+      document.getElementById('lat-dms').innerText = `${latDegrees}° ${latMinutes}' ${latSeconds}" ${latDirection}`;
+      document.getElementById('lon-dms').innerText = `${lonDegrees}° ${lonMinutes}' ${lonSeconds}" ${lonDirection}`;
 
       // Calculate and display Grid Locator
       const gridLocator = calculateGridLocator(latitude, longitude);
       document.getElementById('grid-locator').innerText = gridLocator;
-    }
-
-    function convertToDMS(coordinate, isLatitude) {
-      const absolute = Math.abs(coordinate);
-      const degrees = Math.floor(absolute);
-      const minutesNotTruncated = (absolute - degrees) * 60;
-      const minutes = Math.floor(minutesNotTruncated);
-      const seconds = ((minutesNotTruncated - minutes) * 60).toFixed(2);
-
-      const direction = coordinate >= 0
-        ? isLatitude ? 'N' : 'E'
-        : isLatitude ? 'S' : 'W';
-
-      return `${degrees}° ${minutes}' ${seconds}" ${direction}`;
     }
 
     function calculateGridLocator(lat, lon) {

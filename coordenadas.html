@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Address to Coordinates</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 20px;
+    }
+    input, button {
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .output {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Address to Coordinates</h1>
+  <p>Enter an address below to get its coordinates:</p>
+
+  <input type="text" id="address" placeholder="Enter address here">
+  <button onclick="getCoordinates()">Get Coordinates</button>
+
+  <div id="results" class="output">
+    <h3>Results:</h3>
+    <p><strong>Latitude:</strong> <span id="latitude">-</span></p>
+    <p><strong>Longitude:</strong> <span id="longitude">-</span></p>
+    <p><strong>Latitude (Decimal):</strong> <span id="latitude-decimal">-</span></p>
+    <p><strong>Longitude (Decimal):</strong> <span id="longitude-decimal">-</span></p>
+    <p><strong>Grid Locator:</strong> <span id="grid-locator">-</span></p>
+  </div>
+
+  <script>
+    function getCoordinates() {
+      const address = document.getElementById('address').value;
+      const geocoder = new google.maps.Geocoder();
+
+      if (!address) {
+        alert('Please enter an address!');
+        return;
+      }
+
+      geocoder.geocode({ address: address }, function (results, status) {
+        if (status === 'OK') {
+          const location = results[0].geometry.location;
+          const latitude = location.lat();
+          const longitude = location.lng();
+
+          // Display results in degrees, minutes, and seconds
+          document.getElementById('latitude').innerText = convertToDMS(latitude, true);
+          document.getElementById('longitude').innerText = convertToDMS(longitude, false);
+
+          // Display results in decimal format
+          document.getElementById('latitude-decimal').innerText = latitude.toFixed(6);
+          document.getElementById('longitude-decimal').innerText = longitude.toFixed(6);
+
+          // Calculate and display Grid Locator
+          const gridLocator = calculateGridLocator(latitude, longitude);
+          document.getElementById('grid-locator').innerText = gridLocator;
+        } else {
+          alert('Geocode was not successful for the following reason: ' + status);
+        }
+      });
+    }
+
+    function convertToDMS(coordinate, isLatitude) {
+      const absolute = Math.abs(coordinate);
+      const degrees = Math.floor(absolute);
+      const minutesNotTruncated = (absolute - degrees) * 60;
+      const minutes = Math.floor(minutesNotTruncated);
+      const seconds = ((minutesNotTruncated - minutes) * 60).toFixed(2);
+
+      const direction = coordinate >= 0
+        ? isLatitude ? 'N' : 'E'
+        : isLatitude ? 'S' : 'W';
+
+      return `${degrees}° ${minutes}' ${seconds}" ${direction}`;
+    }
+
+    function calculateGridLocator(lat, lon) {
+      const upperCase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const lowerCase = 'abcdefghijklmnopqrstuvwxyz';
+
+      lat += 90;
+      lon += 180;
+
+      const latField = Math.floor(lat / 10);
+      const lonField = Math.floor(lon / 20);
+      const latSquare = Math.floor(lat % 10);
+      const lonSquare = Math.floor((lon % 20) / 2);
+      const latSubs = Math.floor((lat - Math.floor(lat)) * 24);
+      const lonSubs = Math.floor((lon - Math.floor(lon)) * 24);
+
+      return (
+        upperCase.charAt(lonField) +
+        upperCase.charAt(latField) +
+        lonSquare +
+        latSquare +
+        lowerCase.charAt(lonSubs) +
+        lowerCase.charAt(latSubs)
+      );
+    }
+  </script>
+</body>
+</html>
